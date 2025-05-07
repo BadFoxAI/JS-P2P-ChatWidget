@@ -1,0 +1,864 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>P2P Chat Component</title>
+    <style>
+        /* --- Theme Variables --- */
+        :root {
+            /* Default: Dark Theme */
+            --chat-bg-body: #1a1a1a;
+            --chat-bg-container: #2d2d2d;
+            --chat-bg-input: #3c3c3c;
+            --chat-bg-chat: #252525;
+            --chat-bg-status: #333333;
+            --chat-bg-button-primary: #007acc;
+            --chat-bg-button-primary-hover: #005fa3;
+            --chat-bg-button-secondary: #505050;
+            --chat-bg-button-secondary-hover: #606060;
+            --chat-bg-button-disabled: #404040;
+            --chat-text-primary: #e0e0e0;
+            --chat-text-secondary: #b0b0b0;
+            --chat-text-input: #f0f0f0;
+            --chat-text-button: #ffffff;
+            --chat-text-button-secondary: #e0e0e0;
+            --chat-text-system: #9e9e9e;
+            --chat-border-color: #4a4a4a;
+            --chat-msg-bg-local: #004d7a;
+            --chat-msg-bg-remote: #3e4042;
+            --chat-icon-color: #b0b0b0;
+            --chat-icon-hover-color: #ffffff;
+            --chat-box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            --chat-modal-bg: rgba(0, 0, 0, 0.6);
+            --chat-modal-content-bg: var(--chat-bg-container);
+        }
+
+        body.chat-light-theme { /* Light Theme Overrides */
+            --chat-bg-body: #f4f6f8;
+            --chat-bg-container: #ffffff;
+            --chat-bg-input: #f9f9f9;
+            --chat-bg-chat: #f5f5f5;
+            --chat-bg-status: #eeeeee;
+            --chat-bg-button-primary: #007bff;
+            --chat-bg-button-primary-hover: #0056b3;
+            --chat-bg-button-secondary: #6c757d;
+            --chat-bg-button-secondary-hover: #545b62;
+            --chat-bg-button-disabled: #cccccc;
+            --chat-text-primary: #212529;
+            --chat-text-secondary: #495057;
+            --chat-text-input: #333333;
+            --chat-text-button: #ffffff;
+            --chat-text-button-secondary: #ffffff;
+            --chat-text-system: #6c757d;
+            --chat-border-color: #ced4da;
+            --chat-msg-bg-local: #007bff;
+            --chat-msg-bg-remote: #e9ecef;
+            --chat-icon-color: #495057;
+            --chat-icon-hover-color: #000000;
+            --chat-box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            --chat-modal-bg: rgba(0, 0, 0, 0.4);
+            --chat-modal-content-bg: var(--chat-bg-container);
+        }
+
+        /* --- General Body Style --- */
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--chat-bg-body);
+            color: var(--chat-text-primary);
+            margin: 0; padding: 0; font-size: 15px; line-height: 1.6;
+            transition: background-color 0.2s ease-out, color 0.2s ease-out;
+        }
+
+        /* --- Chat Module Styles --- */
+        #chatModuleWrapper { position: fixed; bottom: 20px; right: 20px; z-index: 1000; }
+        #chatModuleContainer {
+            width: 380px; max-height: calc(100vh - 90px); display: flex; flex-direction: column;
+            background-color: var(--chat-bg-container); color: var(--chat-text-primary);
+            border-radius: 10px; box-shadow: var(--chat-box-shadow);
+            border: 1px solid var(--chat-border-color); overflow: hidden;
+            transition: width 0.25s ease-out, height 0.25s ease-out, opacity 0.25s ease-out, transform 0.25s ease-out;
+            transform-origin: bottom right;
+        }
+        #chatModuleContainer.collapsed {
+            width: 48px; height: 48px; padding: 0; overflow: visible;
+            border: none;
+            background-color: transparent; box-shadow: none;
+        }
+        #chatModuleContainer.collapsed > *:not(#moduleToggleBar) { display: none !important; }
+
+        #moduleToggleBar {
+            display: flex; justify-content: space-between;
+            align-items: center; padding: 6px 10px; background-color: var(--chat-bg-status);
+            border-bottom: 1px solid var(--chat-border-color); user-select: none;
+        }
+        #chatModuleContainer.collapsed #moduleToggleBar {
+            padding: 0; background-color: var(--chat-bg-button-secondary);
+            width: 48px; height: 48px; border-radius: 50%; 
+            justify-content: center; align-items: center; 
+            border-bottom: none; box-shadow: var(--chat-box-shadow);
+            cursor: pointer; 
+        }
+        #chatModuleContainer.collapsed #moduleToggleBar #chatModuleTitle,
+        #chatModuleContainer.collapsed #moduleToggleBar #themeToggleIcon,
+        #chatModuleContainer.collapsed #moduleToggleBar #clearStorageIcon {
+             display: none !important;
+        }
+        #chatModuleContainer.collapsed #moduleToggleBar #collapseIcon {
+            display: inline-flex !important; 
+            align-items: center; 
+            justify-content: center; 
+            width: 100%; 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            font-size: 22px; 
+            line-height: 1; 
+            border-radius: 0; 
+        }
+        #chatModuleTitle { font-weight: 500; font-size: 1.05em; }
+        .toggle-icon-group { display: flex; align-items: center; }
+        #chatModuleContainer.collapsed #moduleToggleBar .toggle-icon-group {
+            width: 100%;
+            height: 100%;
+            justify-content: center; 
+        }
+        .toggle-icon {
+            cursor: pointer; font-size: 20px;
+            padding: 5px; margin-left: 6px; line-height: 1;
+            color: var(--chat-icon-color); transition: color 0.2s ease, transform 0.15s ease;
+            display: inline-flex; align-items: center; justify-content: center; border-radius: 4px;
+        }
+        .toggle-icon:hover { color: var(--chat-icon-hover-color); background-color: rgba(120,120,120,0.15);}
+        .toggle-icon:active { transform: scale(0.9); }
+
+        #chatModuleContent { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; }
+
+        .name-control-group { display: flex; gap: 8px; margin-bottom: 15px; align-items: center; }
+        #displayNameInput {
+            flex-grow: 1; padding: 9px 12px; background-color: var(--chat-bg-input);
+            color: var(--chat-text-input); border: 1px solid var(--chat-border-color);
+            border-radius: 6px; font-size: 14px;
+        }
+        #displayNameInput::placeholder { color: var(--chat-text-secondary); opacity: 0.7;}
+        #setDisplayNameBtn {
+             padding: 9px 12px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 14px; transition: background-color 0.2s ease;
+            background-color: var(--chat-bg-button-secondary); color: var(--chat-text-button-secondary);
+        }
+        #setDisplayNameBtn:hover { background-color: var(--chat-bg-button-secondary-hover); }
+
+
+        .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; align-items: center;}
+        .controls button, #sendBtn, #copyHostIdBtn {
+            padding: 9px 15px; border: none; border-radius: 6px; cursor: pointer;
+            font-size: 14px; transition: background-color 0.2s ease, color 0.2s ease;
+            color: var(--chat-text-button);
+        }
+        .controls button#hostBtn, .controls button#connectBtn {
+            background-color: var(--chat-bg-button-secondary);
+            color: var(--chat-text-button-secondary);
+        }
+        .controls button#hostBtn:hover, .controls button#connectBtn:hover { background-color: var(--chat-bg-button-secondary-hover); }
+        #sendBtn, #copyHostIdBtn { background-color: var(--chat-bg-button-primary); }
+        #sendBtn:hover, #copyHostIdBtn:hover { background-color: var(--chat-bg-button-primary-hover); }
+        .controls button:disabled, #sendBtn:disabled, #copyHostIdBtn:disabled, #setDisplayNameBtn:disabled {
+            background-color: var(--chat-bg-button-disabled) !important;
+            color: #888 !important; cursor: not-allowed;
+        }
+        #copyHostIdBtn { margin-top: 5px; padding: 6px 10px; font-size: 0.85em; display: none; }
+
+        .controls input[type="text"]#hostIdInput {
+            flex-grow: 1; padding: 9px 12px; background-color: var(--chat-bg-input);
+            color: var(--chat-text-input); border: 1px solid var(--chat-border-color);
+            border-radius: 6px; font-size: 14px;
+        }
+        .controls input[type="text"]::placeholder { color: var(--chat-text-secondary); opacity: 0.7;}
+
+        #statusContainer { display: flex; flex-direction: column; align-items: center; margin-bottom: 10px; }
+        #status { color: var(--chat-text-secondary); font-style: italic; text-align: center; padding: 6px;
+                  background-color: var(--chat-bg-status); border-radius: 6px; font-size: 0.9em; width: 100%; margin-bottom: 4px;}
+        #chat { height: 250px; background-color: var(--chat-bg-chat); border: 1px solid var(--chat-border-color);
+                overflow-y: auto; margin-bottom: 12px; padding: 10px; border-radius: 6px; flex-grow: 1; }
+
+        .message-item { margin-bottom: 8px; padding: 8px 12px; border-radius: 15px; max-width: 85%; word-wrap: break-word; }
+        .message-item.local { background-color: var(--chat-msg-bg-local); color: #e1f5fe; margin-left: auto; border-bottom-right-radius: 5px; text-align: left; }
+        body.chat-light-theme .message-item.local { color: var(--chat-text-button); }
+        .message-item.remote { background-color: var(--chat-msg-bg-remote); color: var(--chat-text-primary); margin-right: auto; border-bottom-left-radius: 5px; }
+        body.chat-light-theme .message-item.remote { color: var(--chat-text-input); }
+        .message-item .sender-tag { font-weight: 600; margin-right: 5px; display: inline-block; font-size: 0.9em; }
+        .message-item .sender-tag.host { color: #c59eff; } body.chat-light-theme .message-item .sender-tag.host { color: #8a2be2;}
+        .message-item .sender-tag.you { color: #90caf9; } body.chat-light-theme .message-item .sender-tag.you { color: var(--chat-bg-button-primary);}
+        .message-item .sender-tag.peer { color: #aaaaaa; } body.chat-light-theme .message-item .sender-tag.peer { color: #555555;}
+        .message-item.system-msg { background-color: transparent; color: var(--chat-text-system); font-style: italic; font-size: 0.85em; text-align: center; max-width: 100%; padding: 4px 0; }
+
+        #messageInput { width: calc(100% - 80px); background-color: var(--chat-bg-input); color: var(--chat-text-input);
+                        border: 1px solid var(--chat-border-color); border-radius: 6px; font-size: 14px;
+                        margin-right: 8px; padding: 9px 12px; }
+        #messageInput::placeholder { color: var(--chat-text-secondary); opacity: 0.7;}
+
+        /* Modal Styles */
+        .modal-overlay {
+            display: none; position: fixed; z-index: 2000;
+            left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: var(--chat-modal-bg);
+            justify-content: center; align-items: center;
+        }
+        .modal-content {
+            background-color: var(--chat-modal-content-bg);
+            margin: auto; padding: 20px;
+            border: 1px solid var(--chat-border-color); border-radius: 8px;
+            width: 80%; max-width: 320px; box-shadow: var(--chat-box-shadow);
+            text-align: center; color: var(--chat-text-primary);
+        }
+        .modal-content p { margin-bottom: 20px; font-size: 1.05em; }
+        .modal-buttons button {
+            padding: 10px 18px; margin: 0 10px;
+            border: none; border-radius: 6px; cursor: pointer; font-size: 14px;
+            transition: background-color 0.2s ease;
+        }
+        .modal-buttons button#confirmClearBtn {
+            background-color: var(--chat-bg-button-primary); color: var(--chat-text-button);
+        }
+        .modal-buttons button#confirmClearBtn:hover { background-color: var(--chat-bg-button-primary-hover); }
+        .modal-buttons button#cancelClearBtn {
+            background-color: var(--chat-bg-button-secondary); color: var(--chat-text-button-secondary);
+        }
+        .modal-buttons button#cancelClearBtn:hover { background-color: var(--chat-bg-button-secondary-hover); }
+
+    </style>
+</head>
+<body>
+    <div id="chatModuleWrapper">
+        <div id="chatModuleContainer">
+            <div id="moduleToggleBar">
+                <span id="chatModuleTitle">P2P Chat</span>
+                <div class="toggle-icon-group">
+                    <span id="clearStorageIcon" class="toggle-icon" title="Clear Stored Data">🗑️</span>
+                    <span id="themeToggleIcon" class="toggle-icon" title="Toggle Theme">☀️</span>
+                    <span id="collapseIcon" class="toggle-icon" title="Toggle Chat">💬</span>
+                </div>
+            </div>
+            <div id="chatModuleContent">
+                <div id="statusContainer">
+                    <div id="status" class="status">Initializing...</div>
+                    <button id="copyHostIdBtn">Copy Host ID</button>
+                </div>
+                <div class="name-control-group">
+                    <input type="text" id="displayNameInput" placeholder="Your Name (max 30 chars)">
+                    <button id="setDisplayNameBtn">Set Name</button>
+                </div>
+                <div class="controls">
+                    <button id="hostBtn">Become Host</button>
+                    <button id="connectBtn">Connect</button>
+                    <input type="text" id="hostIdInput" placeholder="Host Connection ID">
+                </div>
+                <div id="chat"></div>
+                <div style="display: flex; margin-top: auto;">
+                    <input type="text" id="messageInput" placeholder="Type message...">
+                    <button id="sendBtn">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="clearStorageModal" class="modal-overlay">
+        <div class="modal-content">
+            <p>Are you sure you want to clear all stored chat data (theme, name, PeerID)?</p>
+            <div class="modal-buttons">
+                <button id="confirmClearBtn">Yes, Clear Data</button>
+                <button id="cancelClearBtn">No, Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/peerjs@1.4.7/dist/peerjs.min.js"></script>
+    <script>
+        // --- Application Constants ---
+        const MAX_PEER_INIT_ATTEMPTS = 5;
+        const DEFAULT_PEER_ID_PREFIX = 'peerchat-';
+        const SHORT_ID_LENGTH = 7;
+        const DISPLAY_NAME_MAX_LENGTH = 30;
+        const LOCAL_STORAGE_KEYS = {
+            THEME: 'chatAppTheme',
+            DISPLAY_NAME: 'chatUserDisplayName',
+            PEER_ID: 'chatAppPeerId'
+        };
+
+        // --- Application State Variables ---
+        let peer;
+        let hostConnection;
+        let connections = {};
+        let isHost = false;
+        let messageQueue = [];
+        let myPeerId = null;
+        let myDisplayName = null;
+        let peerInitAttempts = 0;
+        let isChatModuleCollapsed = false;
+        let currentTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME) || 'dark';
+
+        // --- DOM Element References ---
+        const chatModuleContainerEl = document.getElementById('chatModuleContainer');
+        const collapseIconEl = document.getElementById('collapseIcon');
+        const themeToggleIconEl = document.getElementById('themeToggleIcon');
+        const clearStorageIconEl = document.getElementById('clearStorageIcon');
+        const statusEl = document.getElementById('status');
+        const copyHostIdBtnEl = document.getElementById('copyHostIdBtn');
+        const chatEl = document.getElementById('chat');
+        const messageInputEl = document.getElementById('messageInput');
+        const sendBtnEl = document.getElementById('sendBtn');
+        const hostBtnEl = document.getElementById('hostBtn');
+        const connectBtnEl = document.getElementById('connectBtn');
+        const hostIdInputEl = document.getElementById('hostIdInput');
+        const displayNameInputEl = document.getElementById('displayNameInput');
+        const setDisplayNameBtnEl = document.getElementById('setDisplayNameBtn');
+        const clearStorageModalEl = document.getElementById('clearStorageModal');
+        const confirmClearBtnEl = document.getElementById('confirmClearBtn');
+        const cancelClearBtnEl = document.getElementById('cancelClearBtn');
+
+        const textEncoder = new TextEncoder();
+        const textDecoder = new TextDecoder();
+
+        // --- Utility Functions ---
+        function sanitizeHTML(str) {
+            const temp = document.createElement('div');
+            temp.textContent = str;
+            return temp.innerHTML;
+        }
+
+        function getShortPeerId(id) {
+            return id ? id.slice(-SHORT_ID_LENGTH) : 'unknown';
+        }
+
+        function updateSelfStatusDisplay() {
+            if (peer && peer.open) {
+                const nameToDisplay = sanitizeHTML(myDisplayName || getShortPeerId(myPeerId));
+                let statusText = `Online as ${nameToDisplay}`;
+                if (isHost) {
+                    statusText = `Hosting as ${nameToDisplay}. Share ID: ${getShortPeerId(myPeerId)}`;
+                } else if (hostConnection && hostConnection.open) {
+                    const hostDisplayName = sanitizeHTML(hostConnection.displayName || `Host (${getShortPeerId(hostConnection.peer)})`);
+                    statusText = `Connected to ${hostDisplayName} as ${nameToDisplay}`;
+                }
+                updateStatus(statusText);
+            } else {
+                 updateStatus("Ready. Set name, then Host or Connect.");
+            }
+        }
+
+        // --- PeerJS Core Logic ---
+        function initializePeer(requestedPeerId = null) {
+            if (peer && !peer.destroyed) { console.warn("[P2P CHAT] PeerJS instance active."); return; }
+            if (peer && peer.destroyed) { console.info("[P2P CHAT] Old PeerJS instance destroyed; re-initializing."); }
+
+            peer = null; peerInitAttempts++;
+
+            if (MAX_PEER_INIT_ATTEMPTS > 0 && peerInitAttempts > MAX_PEER_INIT_ATTEMPTS) {
+                console.error(`[P2P CHAT] Max PeerJS init attempts (${MAX_PEER_INIT_ATTEMPTS}) reached.`);
+                updateStatus("Failed to connect to signaling server.");
+                hostBtnEl.disabled = false; connectBtnEl.disabled = false;
+                return;
+            }
+
+            const storedPeerId = localStorage.getItem(LOCAL_STORAGE_KEYS.PEER_ID);
+            let peerIdToUse = requestedPeerId || storedPeerId || (DEFAULT_PEER_ID_PREFIX + Math.random().toString(36).substr(2, 9));
+            if (!requestedPeerId && storedPeerId && peerInitAttempts > 1) {
+                 peerIdToUse = DEFAULT_PEER_ID_PREFIX + Math.random().toString(36).substr(2, 9);
+                 console.info("[P2P CHAT] Forcing new PeerID on re-init.");
+            }
+
+            localStorage.setItem(LOCAL_STORAGE_KEYS.PEER_ID, peerIdToUse);
+            myPeerId = peerIdToUse;
+            console.info(`[P2P CHAT] Initializing PeerJS (Attempt ${peerInitAttempts}) with ID: ${myPeerId}`);
+
+            try {
+                peer = new Peer(myPeerId, {
+                    config: { iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] }, debug: 2
+                });
+            } catch (e) {
+                console.error(`[P2P CHAT] Error creating PeerJS: ${e.message || e}`);
+                updateStatus("Error initializing PeerJS. Retrying...");
+                schedulePeerReinitialization(); return;
+            }
+
+            peer.on('open', (id) => {
+                myPeerId = id; localStorage.setItem(LOCAL_STORAGE_KEYS.PEER_ID, myPeerId);
+                console.info(`[P2P CHAT] PeerJS OPENED. My ID: ${myPeerId}`);
+                peerInitAttempts = 0; updateSelfStatusDisplay();
+                if (isHost) {
+                    hostIdInputEl.value = myPeerId; copyHostIdBtnEl.style.display = 'inline-block';
+                    addMessage(`You are HOST (${sanitizeHTML(myDisplayName || getShortPeerId(myPeerId))})`, 'system');
+                } else { copyHostIdBtnEl.style.display = 'none'; }
+                processMessageQueue();
+            });
+
+            peer.on('connection', (conn) => { setupConnectionObject(conn); });
+
+            peer.on('error', (err) => {
+                console.error(`[P2P CHAT] PeerJS Error: ${err.type} - ${err.message || err}`);
+                updateStatus(`Error: ${err.type}. Retrying.`);
+                hostBtnEl.disabled = false; connectBtnEl.disabled = false;
+                if (err.type === 'unavailable-id') {
+                    localStorage.removeItem(LOCAL_STORAGE_KEYS.PEER_ID); schedulePeerReinitialization(true);
+                } else if (['network', 'server-error', 'socket-error', 'socket-closed', 'disconnected'].includes(err.type)) {
+                    schedulePeerReinitialization();
+                } else if (err.type === 'peer-unavailable' && err.message) {
+                    addMessage(`Could not connect to peer: ${getShortPeerId(err.message.split(' ').pop())}`, 'system');
+                }
+            });
+
+            peer.on('disconnected', () => {
+                console.warn('[P2P CHAT] Disconnected from PeerJS server. Reconnecting...');
+                updateStatus('Disconnected. Reconnecting...'); schedulePeerReinitialization();
+            });
+
+            peer.on('close', () => {
+                console.warn('[P2P CHAT] PeerJS connection closed permanently.');
+                updateStatus('Connection closed. Re-initialize manually.'); peer = null;
+                hostBtnEl.disabled = false; connectBtnEl.disabled = false;
+                copyHostIdBtnEl.style.display = 'none'; peerInitAttempts = 0;
+            });
+        }
+
+        function schedulePeerReinitialization(forceNewId = false) {
+            if (forceNewId) { localStorage.removeItem(LOCAL_STORAGE_KEYS.PEER_ID); myPeerId = null; }
+            if (peer && !peer.destroyed) { peer.destroy(); } peer = null;
+            const delay = Math.min(3000 + (peerInitAttempts * 1000), 15000);
+            console.info(`[P2P CHAT] Scheduling PeerJS re-init in ${delay / 1000}s. New ID: ${forceNewId}`);
+            setTimeout(() => initializePeer(forceNewId ? null : undefined), delay);
+        }
+
+        function sendEncoded(conn, dataObject) {
+            if (conn && conn.open) {
+                try {
+                    const jsonString = JSON.stringify(dataObject);
+                    const encodedData = textEncoder.encode(jsonString);
+                    conn.send(encodedData);
+                } catch (error) { console.error(`[P2P CHAT] Error encoding/sending: ${error}`, error); }
+            } else { console.warn("[P2P CHAT] Attempted send on closed/invalid connection."); }
+        }
+
+        function setupConnectionObject(conn) {
+            const connId = conn.peer; conn.displayName = conn.metadata?.name || null;
+            if (isHost) {
+                connections[connId] = conn;
+                console.info(`[P2P CHAT] Incoming connection: ${getShortPeerId(connId)}${conn.displayName ? ` (${sanitizeHTML(conn.displayName)})` : ''}`);
+            } else {
+                hostConnection = conn;
+                console.info(`[P2P CHAT] Establishing connection with host: ${getShortPeerId(connId)}${conn.displayName ? ` (${sanitizeHTML(conn.displayName)})` : ''}`);
+            }
+
+            conn.on('open', () => {
+                const remoteIdentifier = sanitizeHTML(conn.displayName || getShortPeerId(connId));
+                console.info(`[P2P CHAT] DataConnection to ${remoteIdentifier} (ID: ${getShortPeerId(connId)}) OPENED.`);
+                addMessage(`${remoteIdentifier} connected.`, 'system'); updateSelfStatusDisplay();
+                if (isHost) {
+                    sendEncoded(conn, { type: 'host-announcement', hostId: myPeerId, hostName: myDisplayName || getShortPeerId(myPeerId) });
+                    setTimeout(() => {
+                        if (conn.open) {
+                            sendEncoded(conn, {
+                                type: 'chat-history',
+                                messages: Array.from(chatEl.children)
+                                    .filter(el => !el.classList.contains('system-msg') && el.dataset.peerId) // Only send non-system, peer messages
+                                    .map(el => ({ html: el.innerHTML, className: el.className, peerId: el.dataset.peerId })) // Include peerId for history context
+                            });
+                        }
+                    }, 500);
+                }
+                processMessageQueue();
+            });
+
+            conn.on('data', (receivedData) => {
+                try {
+                    const jsonString = textDecoder.decode(receivedData);
+                    const dataObject = JSON.parse(jsonString);
+                    handleIncomingData(dataObject, connId, conn);
+                } catch (error) {
+                    console.error(`[P2P CHAT] Error decoding/parsing: ${error}`, error);
+                    const rawBytes = new Uint8Array(receivedData.slice(0,100));
+                    console.debug(`[P2P CHAT] Raw received (first 100 bytes): [${rawBytes.join(', ')}]`);
+                }
+            });
+
+            conn.on('close', () => {
+                const remoteIdentifier = sanitizeHTML(conn.displayName || getShortPeerId(connId));
+                console.warn(`[P2P CHAT] DataConnection to ${remoteIdentifier} CLOSED.`);
+                addMessage(`${remoteIdentifier} disconnected.`, 'system');
+                if (isHost) { delete connections[connId];
+                } else if (hostConnection && hostConnection.peer === connId) {
+                    hostConnection = null; hostIdInputEl.value = '';
+                    connectBtnEl.disabled = false; if (!isHost) hostBtnEl.disabled = false;
+                }
+                updateSelfStatusDisplay();
+            });
+
+            conn.on('error', (err) => { console.error(`[P2P CHAT] DataConnection error with ${getShortPeerId(connId)}: ${err.type} - ${err.message || err}`); });
+        }
+
+        function handleIncomingData(dataObject, fromId, connectionInstance) {
+            const senderIdentifier = dataObject.senderName || dataObject.name || (connectionInstance ? connectionInstance.displayName : null) || getShortPeerId(fromId);
+            console.info(`[P2P CHAT] Decoded Data: type=${dataObject.type} from ${senderIdentifier} (ID: ${getShortPeerId(fromId)})`);
+            switch (dataObject.type) {
+                case 'chat-message':
+                    addMessage(dataObject.text, fromId, dataObject.senderName);
+                    if (isHost) {
+                        Object.values(connections).forEach(c => {
+                            if (c.peer !== fromId && c.open) { sendEncoded(c, dataObject); }
+                        });
+                    }
+                    break;
+                case 'name-update': // Handle display name updates
+                    console.info(`[P2P CHAT] Received name update for ${getShortPeerId(dataObject.peerId)} to "${dataObject.newName}"`);
+                    if (isHost) { // Host receives update from a client
+                        if (connections[dataObject.peerId]) {
+                            connections[dataObject.peerId].displayName = dataObject.newName;
+                            // Relay this name update to other clients
+                            Object.values(connections).forEach(clientConn => {
+                                if (clientConn.peer !== dataObject.peerId && clientConn.open) {
+                                    sendEncoded(clientConn, dataObject);
+                                }
+                            });
+                        }
+                    } else { // Client receives update (either from host, or host relaying another client's update)
+                        if (hostConnection && hostConnection.peer === dataObject.peerId) { // Host updated their name
+                            hostConnection.displayName = dataObject.newName;
+                        } else if (connections[dataObject.peerId]) { // Another client's name updated (less common for client to track all peers)
+                             connections[dataObject.peerId].displayName = dataObject.newName;
+                        }
+                    }
+                    updateChatLogDisplayName(dataObject.peerId, dataObject.newName); // Update past messages
+                    updateSelfStatusDisplay(); // Update status if it involves the host
+                    addMessage(`${senderIdentifier} is now known as ${sanitizeHTML(dataObject.newName)}.`, 'system');
+                    break;
+                case 'host-announcement':
+                    if (!isHost) {
+                        const hostName = dataObject.hostName || getShortPeerId(dataObject.hostId);
+                        if (connectionInstance) connectionInstance.displayName = dataObject.hostName;
+                        addMessage(`Connected to host: ${sanitizeHTML(hostName)}`, 'system');
+                        updateSelfStatusDisplay();
+                    }
+                    break;
+                case 'client-info': // This is more for initial connection if metadata wasn't enough
+                    if (isHost && connectionInstance && dataObject.name) {
+                        connectionInstance.displayName = dataObject.name;
+                        console.info(`[P2P CHAT] Name for ${getShortPeerId(fromId)} set to ${sanitizeHTML(dataObject.name)} via client-info.`);
+                        addMessage(`${sanitizeHTML(dataObject.name)} (${getShortPeerId(fromId)}) joined.`, 'system');
+                    }
+                    break;
+                case 'chat-history':
+                    if (!isHost && dataObject.messages && Array.isArray(dataObject.messages)) {
+                        chatEl.innerHTML = '';
+                        dataObject.messages.forEach(m => {
+                            // For history, senderName needs to be derived or passed if not in m.html
+                            // Assuming m.html contains the full sender tag already or we use m.peerId
+                            const div = document.createElement('div');
+                            div.innerHTML = m.html; div.className = m.className;
+                            if (m.peerId) div.dataset.peerId = m.peerId; // Ensure peerId is set for history items
+                            chatEl.appendChild(div);
+                        });
+                        chatEl.scrollTop = chatEl.scrollHeight; addMessage("Chat history loaded.", "system");
+                    }
+                    break;
+                default: console.warn(`[P2P CHAT] Unknown data type: ${dataObject.type}.`);
+            }
+        }
+
+        function processMessageQueue() {
+            if (messageQueue.length > 0) { console.info(`[P2P CHAT] Processing ${messageQueue.length} queued messages.`); }
+            let requeuedCount = 0; const initialQueueLength = messageQueue.length;
+            while (messageQueue.length > 0 && requeuedCount < initialQueueLength * 2) {
+                const { text, target } = messageQueue.shift(); let sent = false;
+                if (target === 'host' && hostConnection && hostConnection.open) { sendToHost(text); sent = true;
+                } else if (target === 'broadcast' && isHost && peer && peer.open) { broadcastMessage(text); sent = true; }
+                if (!sent) { messageQueue.push({ text, target }); requeuedCount++; } else { requeuedCount = 0; }
+            }
+            if (requeuedCount > 0 && messageQueue.length > 0) { console.warn(`[P2P CHAT] ${messageQueue.length} messages remain queued.`); }
+        }
+
+        function broadcastMessage(text) {
+            if (!isHost || !peer || !peer.open) return;
+            const senderDisplayName = myDisplayName || `Host (${getShortPeerId(myPeerId)})`;
+            addMessage(text, myPeerId, senderDisplayName);
+            const msgData = { type: 'chat-message', text: text, senderName: myDisplayName || getShortPeerId(myPeerId) };
+            if (Object.keys(connections).length === 0) { console.info("[P2P CHAT] Host: No clients to broadcast to."); return; }
+            Object.values(connections).forEach(c => { sendEncoded(c, msgData); });
+        }
+
+        function sendToHost(text) {
+            if (isHost || !hostConnection || !hostConnection.open) {
+                messageQueue.push({ text, target: 'host' }); addMessage("Host not ready, msg queued.", "system"); return;
+            }
+            const senderDisplayName = myDisplayName || getShortPeerId(myPeerId);
+            addMessage(text, myPeerId, senderDisplayName);
+            const msgData = { type: 'chat-message', text: text, senderName: myDisplayName || getShortPeerId(myPeerId) };
+            sendEncoded(hostConnection, msgData);
+        }
+
+        // --- UI Interaction Functions ---
+        function updateStatus(text) { statusEl.innerHTML = sanitizeHTML(text); }
+
+        function addMessage(text, senderId, senderNameFromNetwork) {
+            const div = document.createElement('div'); div.className = 'message-item';
+            const sanitizedText = sanitizeHTML(text);
+
+            if (senderId !== 'system') { // Store peerId for non-system messages
+                div.dataset.peerId = senderId;
+            }
+
+            if (senderId === 'system') {
+                div.innerHTML = `<em>${sanitizedText}</em>`; div.classList.add('system-msg');
+            } else {
+                let nameSpanHTML = ''; let finalDisplayLabel;
+                let currentSenderName = senderNameFromNetwork;
+
+                // Get the most up-to-date name for the sender
+                if (senderId === myPeerId) {
+                    currentSenderName = myDisplayName;
+                } else if (isHost && connections[senderId]) {
+                    currentSenderName = connections[senderId].displayName || senderNameFromNetwork;
+                } else if (!isHost && hostConnection && hostConnection.peer === senderId) {
+                    currentSenderName = hostConnection.displayName || senderNameFromNetwork;
+                }
+
+
+                if (senderId === myPeerId) {
+                    const namePart = currentSenderName || (isHost ? `Host (${getShortPeerId(myPeerId)})` : getShortPeerId(myPeerId));
+                    finalDisplayLabel = `${namePart} (You)`;
+                    nameSpanHTML = `<span class="sender-tag you">${sanitizeHTML(finalDisplayLabel)}:</span> `;
+                    div.classList.add('local');
+                } else {
+                    let displayName = sanitizeHTML(currentSenderName || getShortPeerId(senderId));
+                    let tagClass = "peer"; finalDisplayLabel = displayName;
+                    if (!isHost && hostConnection && hostConnection.peer === senderId) {
+                        const hostKnownName = currentSenderName || getShortPeerId(senderId);
+                        finalDisplayLabel = `Host (${sanitizeHTML(hostKnownName)})`; tagClass = "host";
+                    } else if (isHost && connections[senderId]) {
+                        finalDisplayLabel = sanitizeHTML(currentSenderName || getShortPeerId(senderId));
+                    }
+                    nameSpanHTML = `<span class="sender-tag ${tagClass}">${sanitizeHTML(finalDisplayLabel)}:</span> `;
+                    div.classList.add('remote');
+                }
+                div.innerHTML = nameSpanHTML + sanitizedText;
+            }
+            chatEl.appendChild(div); chatEl.scrollTop = chatEl.scrollHeight;
+        }
+        /**
+         * Updates the sender display name on past messages in the chat log.
+         * @param {string} peerIdToUpdate - The PeerJS ID of the user whose name changed.
+         * @param {string} newDisplayName - The new display name.
+         */
+        function updateChatLogDisplayName(peerIdToUpdate, newDisplayName) {
+            const messagesToUpdate = chatEl.querySelectorAll(`.message-item[data-peer-id="${peerIdToUpdate}"]`);
+            messagesToUpdate.forEach(messageEl => {
+                const senderTag = messageEl.querySelector('.sender-tag');
+                if (senderTag) {
+                    let newLabel;
+                    const isLocalMsg = peerIdToUpdate === myPeerId;
+                    const isFromHostToClient = !isHost && hostConnection && hostConnection.peer === peerIdToUpdate;
+
+                    if (isLocalMsg) {
+                        const namePart = newDisplayName || (isHost ? `Host (${getShortPeerId(myPeerId)})` : getShortPeerId(myPeerId));
+                        newLabel = `${namePart} (You)`;
+                    } else if (isFromHostToClient) {
+                        newLabel = `Host (${sanitizeHTML(newDisplayName || getShortPeerId(peerIdToUpdate))})`;
+                    } else { // Message from a client to host, or a peer in a more complex setup
+                        newLabel = sanitizeHTML(newDisplayName || getShortPeerId(peerIdToUpdate));
+                    }
+                    senderTag.innerHTML = `${sanitizeHTML(newLabel)}:`;
+                }
+            });
+        }
+
+
+        function applyTheme(theme) {
+            document.body.classList.remove('chat-light-theme', 'chat-dark-theme');
+            document.body.classList.add(theme === 'light' ? 'chat-light-theme' : 'chat-dark-theme');
+            themeToggleIconEl.innerHTML = theme === 'light' ? '🌙' : '☀️';
+            themeToggleIconEl.title = `Switch to ${theme === 'light' ? 'Dark' : 'Light'} Theme`;
+            currentTheme = theme; localStorage.setItem(LOCAL_STORAGE_KEYS.THEME, theme);
+        }
+
+        function toggleChatModule() {
+            isChatModuleCollapsed = !isChatModuleCollapsed;
+            chatModuleContainerEl.classList.toggle('collapsed', isChatModuleCollapsed);
+            collapseIconEl.innerHTML = isChatModuleCollapsed ? '💬' : '✖️';
+            collapseIconEl.title = isChatModuleCollapsed ? 'Open Chat' : 'Close Chat';
+        }
+
+        // --- Event Listeners for UI Elements ---
+        setDisplayNameBtnEl.addEventListener('click', () => {
+            const newName = displayNameInputEl.value.trim();
+            const oldName = myDisplayName; // Store old name for system message
+
+            if (newName && newName.length > 0 && newName.length <= DISPLAY_NAME_MAX_LENGTH) {
+                myDisplayName = newName; localStorage.setItem(LOCAL_STORAGE_KEYS.DISPLAY_NAME, myDisplayName);
+                addMessage(`Display name changed from "${sanitizeHTML(oldName || getShortPeerId(myPeerId))}" to "${sanitizeHTML(myDisplayName)}"`, 'system');
+                console.info(`[P2P CHAT] Display name updated: ${myDisplayName}`);
+                setDisplayNameBtnEl.textContent = "Update Name";
+
+                // Propagate name change to peers
+                if (peer && peer.open) {
+                    const nameUpdateMsg = { type: 'name-update', peerId: myPeerId, newName: myDisplayName };
+                    if (isHost) {
+                        Object.values(connections).forEach(conn => sendEncoded(conn, nameUpdateMsg));
+                    } else if (hostConnection && hostConnection.open) {
+                        sendEncoded(hostConnection, nameUpdateMsg);
+                    }
+                }
+                updateChatLogDisplayName(myPeerId, myDisplayName); // Update own past messages
+
+            } else if (!newName || newName.length === 0) { // Clearing the name
+                myDisplayName = null; localStorage.removeItem(LOCAL_STORAGE_KEYS.DISPLAY_NAME);
+                addMessage(`Display name cleared. Your Peer ID (${getShortPeerId(myPeerId)}) will be used.`, 'system');
+                console.info('[P2P CHAT] Display name cleared.');
+                displayNameInputEl.value = ""; setDisplayNameBtnEl.textContent = "Set Name";
+
+                // Propagate name "clear" (effectively sending null or short ID as name)
+                 if (peer && peer.open) {
+                    const nameUpdateMsg = { type: 'name-update', peerId: myPeerId, newName: null }; // Send null for cleared name
+                    if (isHost) {
+                        Object.values(connections).forEach(conn => sendEncoded(conn, nameUpdateMsg));
+                    } else if (hostConnection && hostConnection.open) {
+                        sendEncoded(hostConnection, nameUpdateMsg);
+                    }
+                }
+                updateChatLogDisplayName(myPeerId, null); // Update own past messages to use ID
+
+            } else { addMessage(`Name invalid. Max ${DISPLAY_NAME_MAX_LENGTH} chars.`, 'system'); }
+            updateSelfStatusDisplay();
+        });
+
+        hostBtnEl.addEventListener('click', () => {
+            console.info('[P2P CHAT] "Become Host" clicked.');
+            copyHostIdBtnEl.style.display = 'none'; isHost = true;
+            hostBtnEl.disabled = true; connectBtnEl.disabled = true;
+            peerInitAttempts = 0; if (peer && !peer.destroyed) { peer.destroy(); } peer = null;
+            initializePeer();
+        });
+
+        connectBtnEl.addEventListener('click', () => {
+            console.info('[P2P CHAT] "Connect" clicked.');
+            copyHostIdBtnEl.style.display = 'none';
+            const remoteHostId = hostIdInputEl.value.trim();
+            if (!remoteHostId) { addMessage("Please enter Host Connection ID.", 'system'); return; }
+            if (myPeerId && remoteHostId === myPeerId) { addMessage("Cannot connect to self.", 'system'); return; }
+            isHost = false; hostBtnEl.disabled = true; connectBtnEl.disabled = true; peerInitAttempts = 0;
+            const connectOptions = {
+                reliable: true, serialization: 'binary',
+                metadata: { name: myDisplayName || getShortPeerId(myPeerId) }
+            };
+            if (!peer || peer.destroyed || !peer.open) {
+                console.info("[P2P CHAT] Local PeerJS not ready, initializing first.");
+                if (peer && !peer.destroyed) { peer.destroy(); } peer = null;
+                const onOpenConnect = () => {
+                    if(peer) { peer.off('open', onOpenConnect); peer.off('error', onErrorConnect); }
+                    if (peer && peer.open && !peer.destroyed) {
+                        console.info(`[P2P CHAT] Local PeerJS opened (ID: ${myPeerId}), connecting to: ${remoteHostId}`);
+                        hostConnection = peer.connect(remoteHostId, connectOptions);
+                        setupConnectionObject(hostConnection);
+                    } else {
+                        console.error("[P2P CHAT] Local PeerJS failed to open for connection.");
+                        addMessage("Connection init failed: Local peer not ready.", "system");
+                        connectBtnEl.disabled = false; if(!isHost) hostBtnEl.disabled = false; updateSelfStatusDisplay();
+                    }
+                };
+                const onErrorConnect = (err) => {
+                    if(peer) { peer.off('open', onOpenConnect); peer.off('error', onErrorConnect); }
+                    console.error(`[P2P CHAT] Error init local PeerJS for connect: ${err.type}`);
+                    addMessage("Error initializing local connection. Try again.", "system");
+                    connectBtnEl.disabled = false; if(!isHost) hostBtnEl.disabled = false; updateSelfStatusDisplay();
+                };
+                initializePeer();
+                if (peer) { peer.on('open', onOpenConnect); peer.on('error', onErrorConnect); }
+                else {
+                     console.error("[P2P CHAT] Peer object not created by initializePeer.");
+                     addMessage("Failed to start local connection.", "system");
+                     connectBtnEl.disabled = false; if(!isHost) hostBtnEl.disabled = false; updateSelfStatusDisplay();
+                }
+            } else {
+                console.info(`[P2P CHAT] Local PeerJS ready (ID: ${myPeerId}), connecting to: ${remoteHostId}`);
+                hostConnection = peer.connect(remoteHostId, connectOptions);
+                setupConnectionObject(hostConnection);
+            }
+        });
+
+        function sendMessageHandler() {
+            const text = messageInputEl.value.trim(); if (!text) return;
+            if (!peer || !peer.open || peer.destroyed) {
+                addMessage("Connection not ready. Message queued.", 'system');
+                messageQueue.push({ text, target: isHost ? 'broadcast' : 'host' });
+            } else if (isHost) { broadcastMessage(text);
+            } else if (hostConnection && hostConnection.open) { sendToHost(text);
+            } else {
+                addMessage("Not connected. Message queued.", 'system');
+                if (!isHost) { messageQueue.push({ text, target: 'host' }); }
+            }
+            messageInputEl.value = ''; messageInputEl.focus();
+        }
+
+        sendBtnEl.addEventListener('click', sendMessageHandler);
+        messageInputEl.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessageHandler(); }
+        });
+
+        collapseIconEl.addEventListener('click', toggleChatModule);
+        themeToggleIconEl.addEventListener('click', () => {
+            applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+        });
+
+        clearStorageIconEl.addEventListener('click', () => {
+            clearStorageModalEl.style.display = 'flex';
+        });
+
+        confirmClearBtnEl.addEventListener('click', () => {
+            console.info('[P2P CHAT] Clearing stored application data from localStorage.');
+            Object.values(LOCAL_STORAGE_KEYS).forEach(key => localStorage.removeItem(key)); // Clear all app-specific keys
+            clearStorageModalEl.style.display = 'none';
+            addMessage('Stored data cleared. Reloading application...', 'system');
+            setTimeout(() => { window.location.reload(); }, 1500);
+        });
+
+        cancelClearBtnEl.addEventListener('click', () => {
+            clearStorageModalEl.style.display = 'none';
+        });
+        window.addEventListener('click', (event) => {
+            if (event.target === clearStorageModalEl) {
+                clearStorageModalEl.style.display = 'none';
+            }
+        });
+
+
+        copyHostIdBtnEl.addEventListener('click', () => {
+            if (!myPeerId) { return; }
+            navigator.clipboard.writeText(myPeerId).then(() => {
+                addMessage('Host ID copied to clipboard!', 'system');
+                copyHostIdBtnEl.textContent = 'Copied!';
+                setTimeout(() => { copyHostIdBtnEl.textContent = 'Copy Host ID'; }, 2000);
+            }).catch(err => {
+                console.error('[P2P CHAT] Failed to copy host ID: ', err);
+                addMessage('Could not copy ID. Select manually.', 'system'); hostIdInputEl.select();
+            });
+        });
+
+        // --- Initial Application Setup ---
+        function main() {
+            myDisplayName = localStorage.getItem(LOCAL_STORAGE_KEYS.DISPLAY_NAME);
+            if (myDisplayName) {
+                displayNameInputEl.value = myDisplayName;
+                setDisplayNameBtnEl.textContent = "Update Name";
+            } else { setDisplayNameBtnEl.textContent = "Set Name"; }
+
+            currentTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME) || 'dark';
+            applyTheme(currentTheme);
+            updateSelfStatusDisplay();
+            const welcomeName = myDisplayName ? `, ${sanitizeHTML(myDisplayName)}` : '';
+            addMessage(`Welcome${welcomeName}! Set/confirm name, then Host or Connect.`, "system");
+
+            copyHostIdBtnEl.style.display = 'none';
+            collapseIconEl.innerHTML = '✖️'; collapseIconEl.title = 'Close Chat';
+        }
+
+        main();
+    </script>
+</body>
+</html>
