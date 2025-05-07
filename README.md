@@ -1,4 +1,9 @@
 # JS-P2P-Menu
+A minimalist 3D engine built with **vanilla JavaScript** and **SVG**, entirely contained in a single `index.html` file. No WebGL, no libraries—just math, SVGs, and fun.
+
+![screenshot](https://raw.githubusercontent.com/BadFoxAI/js-p2p-menu/main/screenshot.png)
+
+Try Here at: [https://js-p2p-menu.netlify.app/](https://js-p2p-menu.netlify.app/)
 
 This project is a single-HTML file implementation of a peer-to-peer (P2P) web chat application. It utilizes WebRTC via the PeerJS library to enable users to connect directly and exchange messages without a central server relaying the chat content (beyond initial signaling for connection setup).
 
