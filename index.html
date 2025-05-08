@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>P2P Chat - V6 Debugging</title>
+    <title>P2P Chat - V6 Corrected</title>
     <style>
-        /* CSS from previous example with collapsible setup section */
+        /* --- Theme Variables --- */
         :root { /* Default: Dark Theme */
             --chat-bg-body: #1a1a1a; --chat-bg-container: #2d2d2d; --chat-bg-input: #3c3c3c;
             --chat-bg-chat: #252525; --chat-bg-status-area: #333333; --chat-bg-button-primary: #007acc;
@@ -30,22 +30,18 @@
             --chat-modal-bg: rgba(0, 0, 0, 0.4); --chat-modal-content-bg: var(--chat-bg-container);
             --chat-section-bg: #f8f9fa;
         }
+        /* Base & Layout */
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--chat-bg-body); color: var(--chat-text-primary); margin: 0; padding: 0; font-size: 15px; line-height: 1.6; transition: background-color 0.2s ease-out, color 0.2s ease-out; }
         #chatModuleWrapper { position: fixed; bottom: 20px; right: 20px; z-index: 1000; transition: all 0.3s ease-in-out; }
         #chatModuleContainer { width: 380px; max-height: calc(100vh - 40px); display: flex; flex-direction: column; background-color: var(--chat-bg-container); color: var(--chat-text-primary); border-radius: 10px; box-shadow: var(--chat-box-shadow); border: 1px solid var(--chat-border-color); overflow: hidden; transition: width 0.25s ease-out, height 0.25s ease-out, opacity 0.25s ease-out, transform 0.25s ease-out; transform-origin: bottom right; }
-        #chatModuleContainer.collapsed { width: 48px; height: 48px; padding: 0; overflow: visible; border: none; background-color: transparent; box-shadow: none; }
-        #chatModuleContainer.collapsed > *:not(#moduleToggleBar) { display: none !important; }
+        #chatModuleContent { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 350px; }
+        /* Top Bar */
         #moduleToggleBar { display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background-color: var(--chat-bg-status-area); border-bottom: 1px solid var(--chat-border-color); user-select: none; cursor: default; flex-shrink: 0; }
-        #chatModuleContainer.collapsed #moduleToggleBar { padding: 0; background-color: var(--chat-bg-button-secondary); width: 48px; height: 48px; border-radius: 50%; justify-content: center; align-items: center; border-bottom: none; box-shadow: var(--chat-box-shadow); cursor: pointer; }
-        #chatModuleContainer.collapsed #moduleToggleBar #chatModuleTitle, #chatModuleContainer.collapsed #moduleToggleBar #fullFrameToggleIcon, #chatModuleContainer.collapsed #moduleToggleBar #themeToggleIcon, #chatModuleContainer.collapsed #moduleToggleBar #clearStorageIcon { display: none !important; }
-        #chatModuleContainer.collapsed #moduleToggleBar #collapseIcon { display: inline-flex !important; align-items: center; justify-content: center; width: 100%; height: 100%; margin: 0; padding: 0; font-size: 22px; line-height: 1; border-radius: 0; }
         #chatModuleTitle { font-weight: 500; font-size: 1.05em; }
         .toggle-icon-group { display: flex; align-items: center; }
-        #chatModuleContainer.collapsed #moduleToggleBar .toggle-icon-group { width: 100%; height: 100%; justify-content: center; }
         .toggle-icon { cursor: pointer; font-size: 20px; padding: 5px; margin-left: 6px; line-height: 1; color: var(--chat-icon-color); transition: color 0.2s ease, transform 0.15s ease; display: inline-flex; align-items: center; justify-content: center; border-radius: 4px; }
         .toggle-icon:hover { color: var(--chat-icon-hover-color); background-color: rgba(120,120,120,0.15);} .toggle-icon:active { transform: scale(0.9); }
-        #chatModuleContent { padding: 10px; flex-grow: 1; display: flex; flex-direction: column; overflow: hidden; min-height: 350px; }
-        /* Setup Section */
+        /* Setup Section (Collapsible) */
         .control-section#setupSection { background-color: var(--chat-section-bg); padding: 0; border-radius: 6px; margin-bottom: 10px; border: 1px solid var(--chat-border-color); flex-shrink: 0; transition: margin-bottom 0.3s ease-in-out; }
         .control-section#setupSection .section-title { font-size: 0.8em; text-transform: uppercase; letter-spacing: 0.5px; color: var(--chat-text-secondary); margin:0; padding: 8px 10px; border-bottom: 1px solid var(--chat-border-color); background-color: var(--chat-bg-status-area); border-top-left-radius: 6px; border-top-right-radius: 6px; cursor: pointer; display: flex; justify-content: space-between; align-items: center;}
         .control-section#setupSection .section-title span { font-size: 0.8em; transition: transform 0.2s ease-in-out; }
@@ -82,7 +78,7 @@
         .message-item.local { background-color: var(--chat-msg-bg-local); color: #e1f5fe; margin-left: auto; border-bottom-right-radius: 5px; text-align: left; } body.chat-light-theme .message-item.local { color: var(--chat-text-button); }
         .message-item.remote { background-color: var(--chat-msg-bg-remote); color: var(--chat-text-primary); margin-right: auto; border-bottom-left-radius: 5px; } body.chat-light-theme .message-item.remote { color: var(--chat-text-input); }
         .message-item .sender-tag { font-weight: 600; margin-right: 5px; display: inline-block; font-size: 0.9em; }
-        .message-item .sender-tag.peer { color: #aaaaaa; } body.chat-light-theme .message-item .sender-tag.peer { color: #555555;} /* Simplified remote tag */
+        .message-item .sender-tag.peer { color: #aaaaaa; } body.chat-light-theme .message-item .sender-tag.peer { color: #555555;}
         .message-item .sender-tag.you { color: #90caf9; } body.chat-light-theme .message-item .sender-tag.you { color: var(--chat-bg-button-primary);}
         .message-item.system-msg { background-color: transparent; color: var(--chat-text-system); font-style: italic; font-size: 0.85em; text-align: center; max-width: 100%; padding: 4px 0; }
         /* Other UI */
@@ -93,7 +89,12 @@
         .modal-buttons button { padding: 10px 18px; margin: 0 10px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; transition: background-color 0.2s ease; }
         .modal-buttons button#confirmClearBtn { background-color: var(--chat-bg-button-primary); color: var(--chat-text-button); } .modal-buttons button#confirmClearBtn:hover { background-color: var(--chat-bg-button-primary-hover); }
         .modal-buttons button#cancelClearBtn { background-color: var(--chat-bg-button-secondary); color: var(--chat-text-button-secondary); } .modal-buttons button#cancelClearBtn:hover { background-color: var(--chat-bg-button-secondary-hover); }
-        /* Full Frame */
+        /* Collapse / Full Frame */
+        #chatModuleContainer.collapsed { width: 48px; height: 48px; padding: 0; overflow: visible; border: none; background-color: transparent; box-shadow: none; }
+        #chatModuleContainer.collapsed > *:not(#moduleToggleBar) { display: none !important; }
+        #chatModuleContainer.collapsed #moduleToggleBar { padding: 0; background-color: var(--chat-bg-button-secondary); width: 48px; height: 48px; border-radius: 50%; justify-content: center; align-items: center; border-bottom: none; box-shadow: var(--chat-box-shadow); cursor: pointer; }
+        #chatModuleContainer.collapsed #moduleToggleBar #chatModuleTitle, #chatModuleContainer.collapsed #moduleToggleBar #fullFrameToggleIcon, #chatModuleContainer.collapsed #moduleToggleBar #themeToggleIcon, #chatModuleContainer.collapsed #moduleToggleBar #clearStorageIcon { display: none !important; }
+        #chatModuleContainer.collapsed #moduleToggleBar #collapseIcon { display: inline-flex !important; align-items: center; justify-content: center; width: 100%; height: 100%; margin: 0; padding: 0; font-size: 22px; line-height: 1; border-radius: 0; }
         #chatModuleWrapper.full-frame-mode { width: 100%; height: 100%; bottom: 0; right: 0; top: 0; left: 0; padding:0; }
         #chatModuleWrapper.full-frame-mode #chatModuleContainer { width: 100%; height: 100%; max-height: 100vh; border-radius: 0; border: none; }
         #chatModuleWrapper.full-frame-mode #chatModuleContainer.collapsed > *:not(#moduleToggleBar) { display: flex !important; }
@@ -114,12 +115,12 @@
             </div>
             <div id="chatModuleContent">
 
-                <div id="setupSection" class="control-section collapsible">
+                 <div id="setupSection" class="control-section collapsible"> <!-- Collapsible Setup -->
                     <p class="section-title" id="setupSectionTitle">Setup & Connection <span>🔽</span></p>
                     <div class="section-content">
                         <div id="statusArea">
                              <div id="status" class="status">Initializing...</div>
-                             <div id="peerIdDisplayArea">
+                             <div id="peerIdDisplayArea"> <!-- ID display moved inside -->
                                 Your Peer ID: <span id="myPeerIdValue"></span>
                                 <button id="copyMyIdBtn" disabled>Copy</button>
                             </div>
@@ -166,11 +167,11 @@
         // --- Constants ---
         const MAX_PEER_INIT_ATTEMPTS = 4; const DEFAULT_PEER_ID_PREFIX = 'p2pchat-';
         const SHORT_ID_LENGTH = 6; const DISPLAY_NAME_MAX_LENGTH = 25;
-        const LOCAL_STORAGE_KEYS = { THEME: 'p2pChatTheme_v6', DISPLAY_NAME: 'p2pChatDisplayName_v6', PEER_ID: 'p2pChatPeerId_v6', IS_FULL_FRAME: 'p2pChatIsFullFrame_v6', IS_SETUP_COLLAPSED: 'p2pChatIsSetupCollapsed_v6' };
+        const LOCAL_STORAGE_KEYS = { THEME: 'p2pChatTheme_v6.1', DISPLAY_NAME: 'p2pChatDisplayName_v6.1', PEER_ID: 'p2pChatPeerId_v6.1', IS_FULL_FRAME: 'p2pChatIsFullFrame_v6.1', IS_SETUP_COLLAPSED: 'p2pChatIsSetupCollapsed_v6.1' };
         const MAX_CONSECUTIVE_SERVER_ERRORS = 3;
 
         // --- State ---
-        let peer; let currentPeerConnection = null; /* Only one connection supported in this model */
+        let peer; let currentPeerConnection = null; let connections = {}; // Retain connections for potential multi-peer hosting later? For now, only use currentPeerConnection logic
         let isReadyToHost = false; let messageQueue = []; let myPeerId = null;
         let myDisplayName = null; let peerInitAttempts = 0; let isChatModuleCollapsed = false;
         let currentTheme = localStorage.getItem(LOCAL_STORAGE_KEYS.THEME) || 'dark';
@@ -178,7 +179,7 @@
         let isSetupSectionCollapsed = localStorage.getItem(LOCAL_STORAGE_KEYS.IS_SETUP_COLLAPSED) === 'true';
         let peerJsServerErrorCount = 0;
 
-        // --- DOM Refs (Assume correct IDs from HTML) ---
+        // --- DOM Refs ---
         const chatModuleWrapper=document.getElementById('chatModuleWrapper'); const chatModuleContainerEl=document.getElementById('chatModuleContainer');
         const collapseIconEl=document.getElementById('collapseIcon'); const themeToggleIconEl=document.getElementById('themeToggleIcon');
         const clearStorageIconEl=document.getElementById('clearStorageIcon'); const fullFrameToggleIconEl=document.getElementById('fullFrameToggleIcon');
@@ -224,21 +225,19 @@
                 const nameDisp = sanitizeHTML(myDisplayName || getShortPeerId(myPeerId));
                 if(isReadyToHost) {
                     statusText = `👂 Hosting. Share Your ID: ${getShortPeerId(myPeerId)}`;
-                    hostEnabled = false; connectEnabled = false; inputEnabled = false; // Can't connect or enter ID if hosting
-                    sendEnabled = currentPeerConnection && currentPeerConnection.open; // Only enable send if host is connected TO someone (not standard hosting model)
-                                                                                        // Let's change this: enable if hosting and have ANY connection
-                    sendEnabled = Object.keys(connections).length > 0; // Corrected: enable if clients are connected
-                    if(Object.keys(connections).length > 0) {
-                        statusText = `👂 Hosting ID ${getShortPeerId(myPeerId)} with ${Object.keys(connections).length} connection(s).`;
+                    hostEnabled = false; connectEnabled = false; inputEnabled = false;
+                    sendEnabled = currentPeerConnection && currentPeerConnection.open; // Enable if someone is connected *to* the host
+                    if(currentPeerConnection && currentPeerConnection.open){
+                        const remoteName = sanitizeHTML(currentPeerConnection.metadata?.name || getShortPeerId(currentPeerConnection.peer));
+                        statusText = `👂 Hosting ID ${getShortPeerId(myPeerId)}. Connected to ${remoteName}.`;
                     }
                 } else if (currentPeerConnection && currentPeerConnection.open) {
                     const remoteName = sanitizeHTML(currentPeerConnection.metadata?.name || getShortPeerId(currentPeerConnection.peer));
                     statusText = `✅ Connected to ${remoteName} as ${nameDisp}.`;
                     hostEnabled = false; connectEnabled = false; inputEnabled = false;
                     sendEnabled = true;
-                } else {
+                } else { // Peer online, but idle
                     statusText = `📶 Online as ${nameDisp}. Click Host or enter Peer ID & Connect.`;
-                    // Keep host/connect enabled, send disabled
                 }
             } else if (peerInitAttempts > 0 && peerInitAttempts <= MAX_PEER_INIT_ATTEMPTS) {
                  statusText = `⏳ Connecting PeerJS attempt ${peerInitAttempts}/${MAX_PEER_INIT_ATTEMPTS}...`;
@@ -246,7 +245,6 @@
             } else if (peerInitAttempts > MAX_PEER_INIT_ATTEMPTS) {
                 if (peerJsServerErrorCount >= MAX_CONSECUTIVE_SERVER_ERRORS) statusText = `❌ Server issue. Check network & Retry.`;
                 else statusText = `❌ PeerJS failed. Retry.`;
-                // Keep buttons enabled for manual retry
             }
 
             updateStatusUI(statusText);
@@ -257,36 +255,33 @@
             if(messageInputEl) messageInputEl.disabled = !sendEnabled;
             if(hostBtnEl) hostBtnEl.disabled = !hostEnabled;
             if(connectBtnEl) connectBtnEl.disabled = !connectEnabled;
-            if(hostIdInputEl) hostIdInputEl.disabled = !inputEnabled; // Disable ID input field based on state
+            if(hostIdInputEl) hostIdInputEl.disabled = !inputEnabled;
         }
-
         function addSystemMessage(text){logInfo('System Msg:', text); addMessage(text,'system',null);}
         function addChatMessage(text,senderId,senderName){logInfo(`Chat Msg From ${getShortPeerId(senderId)} (${senderName||''}): ${text}`); addMessage(text,senderId,senderName);}
-
         function addMessage(text, senderId, senderNameFromNetwork) {
-            // ... (Robust version from previous example) ...
              if(!chatEl) { logError("chatEl not found in addMessage"); return; }
             const div = document.createElement('div'); div.className = 'message-item';
             const sanitizedText = sanitizeHTML(text);
             if(senderId && senderId !== 'system') { div.dataset.peerId = senderId; }
             if(senderId === 'system') { div.innerHTML = `<em>${sanitizedText}</em>`; div.classList.add('system-msg'); }
             else { let nameSpanHTML = ''; let finalDisplayLabel; let currentSenderNameToUse = senderNameFromNetwork;
-                if(senderId === myPeerId) currentSenderNameToUse = myDisplayName;
-                else if (currentPeerConnection && senderId === currentPeerConnection.peer) currentSenderNameToUse = currentPeerConnection.metadata?.name || senderNameFromNetwork;
-                else if (connections[senderId]) currentSenderNameToUse = connections[senderId].metadata?.name || senderNameFromNetwork; // Message from a client connected to us (if hosting)
+                 // Determine definitive display name based on connection state
+                 if (senderId === myPeerId) { currentSenderNameToUse = myDisplayName; } // Own message
+                 else if (currentPeerConnection && senderId === currentPeerConnection.peer) { // Message from the connected peer
+                    currentSenderNameToUse = currentPeerConnection.metadata?.name || senderNameFromNetwork;
+                 } // No other cases needed for 1-to-1
 
-                const nameBase = sanitizeHTML(currentSenderNameToUse || getShortPeerId(senderId));
-                if(senderId === myPeerId) { finalDisplayLabel = `${nameBase} (You)`; nameSpanHTML = `<span class="sender-tag you">${finalDisplayLabel}:</span> `; div.classList.add('local'); }
-                else { finalDisplayLabel = nameBase; nameSpanHTML = `<span class="sender-tag peer">${finalDisplayLabel}:</span> `; div.classList.add('remote'); } // Simplified remote tag
-                div.innerHTML = nameSpanHTML + sanitizedText;
-            }
+                 const nameBase = sanitizeHTML(currentSenderNameToUse || getShortPeerId(senderId));
+                 if(senderId === myPeerId) { finalDisplayLabel = `${nameBase} (You)`; nameSpanHTML = `<span class="sender-tag you">${finalDisplayLabel}:</span> `; div.classList.add('local'); }
+                 else { finalDisplayLabel = nameBase; nameSpanHTML = `<span class="sender-tag peer">${finalDisplayLabel}:</span> `; div.classList.add('remote'); }
+                 div.innerHTML = nameSpanHTML + sanitizedText;
+             }
             const shouldScroll = chatEl.scrollTop + chatEl.clientHeight >= chatEl.scrollHeight - 30;
             chatEl.appendChild(div);
-            if(shouldScroll || senderId === myPeerId) chatEl.scrollTop = chatEl.scrollHeight; // Always scroll for own messages
+            if(shouldScroll || senderId === myPeerId) chatEl.scrollTop = chatEl.scrollHeight;
         }
-
         function updateChatLogDisplayName(peerIdToUpdate, newDisplayName) {
-            // ... (Robust version from previous example) ...
              if(!chatEl || !peerIdToUpdate) return;
             const messages = chatEl.querySelectorAll(`.message-item[data-peer-id="${peerIdToUpdate}"]`);
             logInfo(`Updating display name in chat log for ${getShortPeerId(peerIdToUpdate)} to "${newDisplayName||'(use ID)'}" (${messages.length} msgs)`);
@@ -294,12 +289,12 @@
                 const tag = msgEl.querySelector('.sender-tag'); if(!tag) return;
                 let label; const isLocal = peerIdToUpdate === myPeerId;
                 const nameBase = sanitizeHTML(newDisplayName || getShortPeerId(peerIdToUpdate));
-                if(isLocal) label = `${nameBase} (You)`; else label = nameBase; // Simplified
+                if(isLocal) label = `${nameBase} (You)`; else label = nameBase;
                 tag.innerHTML = `${label}:`;
             });
         }
 
-        // --- PEERJS CORE (Simplified Model)---
+        // --- PEERJS CORE ---
         function initializePeer() {
             if(peer && !peer.destroyed){ logWarn("Destroying existing peer before init."); peer.destroy(); }
             peer = null; peerInitAttempts++;
@@ -314,9 +309,18 @@
             // *** PASTE YOUR VALID TURN SERVER CONFIGURATION HERE ***
             const iceServers = [
                 { urls: 'stun:stun.l.google.com:19302' },
-                // { urls: 'turn:YOUR_TURN_SERVER:3478', username: '...', credential: '...' },
-                // { urls: 'turn:YOUR_TURN_SERVER:3478?transport=udp', username: '...', credential: '...' },
-                // { urls: 'turn:YOUR_TURN_SERVER:3478?transport=tcp', username: '...', credential: '...' }
+                { urls: 'stun:stun1.l.google.com:19302' }, // Added another public STUN
+                // { urls: 'stun:global.stun.twilio.com:3478' }, // Example Twilio STUN
+                // {
+                //     urls: 'turn:YOUR_TURN_SERVER:3478?transport=udp',
+                //     username: 'YOUR_TURN_USERNAME',
+                //     credential: 'YOUR_TURN_PASSWORD'
+                // },
+                // {
+                //     urls: 'turn:YOUR_TURN_SERVER:3478?transport=tcp',
+                //     username: 'YOUR_TURN_USERNAME',
+                //     credential: 'YOUR_TURN_PASSWORD'
+                // }
             ];
             // ***********************************************************
 
@@ -324,7 +328,7 @@
             catch(e) { logError(`Peer INSTANTIATION error: ${e}`, e); peerJsServerErrorCount++; updateStatusUI("❌ Error creating Peer object."); schedulePeerReinit(true); return; }
 
             peer.on('open', id => { logInfo(`✅ PeerJS OPEN. ID: ${id}`); myPeerId = id; peerInitAttempts = 0; peerJsServerErrorCount = 0; localStorage.setItem(LOCAL_STORAGE_KEYS.PEER_ID, id); addSystemMessage(`📶 Online. Your ID: ${getShortPeerId(id)}`); updateSelfStatusDisplay(); processMessageQueue(); });
-            peer.on('connection', setupIncomingConnObj); // Handles incoming connections IF we are in isReadyToHost state
+            peer.on('connection', setupIncomingConnObj);
             peer.on('error', err => { logError(`💥 Peer Error: ${err.type}. Attempt ID: ${idToTry}. Msg: ${err.message||'(none)'}`, err); let schedRe=false; let forceN=false; let statMsg=`❌ Error: ${err.type}.`; const servErrs=['network','server-error','socket-error','socket-closed','disconnected']; if(servErrs.includes(err.type)){peerJsServerErrorCount++;logWarn(`Consecutive server errors: ${peerJsServerErrorCount}/${MAX_CONSECUTIVE_SERVER_ERRORS}`); if(peerJsServerErrorCount<MAX_CONSECUTIVE_SERVER_ERRORS){schedRe=true; statMsg+=" Retrying signal server...";}else{statMsg=`❌ Persistent Server Conn issue (${err.type}). Check network. Try again manually.`; peerInitAttempts=MAX_PEER_INIT_ATTEMPTS+1; if(hostBtnEl)hostBtnEl.disabled=false; if(connectBtnEl)connectBtnEl.disabled=false;}} else if(err.type==='unavailable-id'){peerJsServerErrorCount=0; statMsg=`❌ ID ${getShortPeerId(idToTry)} unavailable. Trying different ID...`; forceN=true; schedRe=true;} else if(err.type==='peer-unavailable'){peerJsServerErrorCount=0; const tgt=err.message?err.message.split(' ').pop():'peer'; statMsg=`❌ Could not connect to ${getShortPeerId(tgt)}. Offline/unreachable.`; addSystemMessage(statMsg); if(connectBtnEl)connectBtnEl.disabled=false; if(hostBtnEl&&!isReadyToHost)hostBtnEl.disabled=false;} else {peerJsServerErrorCount=0; statMsg=`❌ PeerJS Error (${err.type}). Try again manually.`; if(hostBtnEl)hostBtnEl.disabled=false; if(connectBtnEl)connectBtnEl.disabled=false;} updateStatusUI(statMsg); if(schedRe)schedulePeerReinit(forceN); updateSelfStatusDisplay(); });
             peer.on('disconnected',()=>{logWarn('[P2P] Disconnected from PeerJS Server.'); updateStatusUI("⏳ Disconnected. Reconnecting..."); peerJsServerErrorCount++; if(peerJsServerErrorCount<MAX_CONSECUTIVE_SERVER_ERRORS){schedulePeerReinit(false);}else{updateStatusUI("❌ Persistent disconnect. Check network. Try again."); peerInitAttempts=MAX_PEER_INIT_ATTEMPTS+1; if(hostBtnEl)hostBtnEl.disabled=false; if(connectBtnEl)connectBtnEl.disabled=false; updateSelfStatusDisplay();}});
             peer.on('close',()=>{logWarn('[P2P] Peer closed.'); updateStatusUI("🚦 Connection closed. Host/Connect again."); myPeerId=null; peer=null; isReadyToHost=false; peerInitAttempts=0; peerJsServerErrorCount=0; resetConnectionState(); updateSelfStatusDisplay();});
@@ -332,33 +336,26 @@
         function schedulePeerReinit(forceNewId){ if(peer&&!peer.destroyed)peer.destroy();peer=null; if(peerInitAttempts>MAX_PEER_INIT_ATTEMPTS||peerJsServerErrorCount>=MAX_CONSECUTIVE_SERVER_ERRORS){logWarn("Skipping scheduled re-init: Max attempts/errors."); updateStatusUI("❌ Failed PeerJS init. Try again."); if(hostBtnEl)hostBtnEl.disabled=false; if(connectBtnEl)connectBtnEl.disabled=false; updateSelfStatusDisplay(); return;} const d=Math.min(4000+(peerInitAttempts*2000),20000); logInfo(`Scheduling re-init in ${d/1000}s. ForceNew:${forceNewId}, Atmpt:${peerInitAttempts+1}, SrvErrs:${peerJsServerErrorCount}`); updateStatusUI(`⏳ Connection failed. Retrying in ${Math.round(d/1000)}s...`); setTimeout(()=>{if(!peer){initializePeer();}else{logInfo("Skipping scheduled re-init, peer exists.");}},d);}
         function sendEncoded(c,dObj){if(c&&c.open){try{c.send(textEncoder.encode(JSON.stringify(dObj)));logInfo('Sent Encoded:', dObj, 'to', getShortPeerId(c.peer));}catch(e){logError('SendEnc Err:',e);}}else{logWarn('SendEnc on closed/null conn:', c?getShortPeerId(c.peer):'N/A');}}
 
-        function setupIncomingConnObj(conn) { // When we are the host (isReadyToHost=true)
+        function setupIncomingConnObj(conn) {
             if (!isReadyToHost) { logWarn("Incoming connection ignored, not ready to host."); conn.close(); return; }
-            // Allow only one connection if not designed for multi-peer hosting?
-            if (currentPeerConnection) {
-                logWarn(`Already connected to ${getShortPeerId(currentPeerConnection.peer)}. Rejecting incoming from ${getShortPeerId(conn.peer)}.`);
-                conn.close(); // Simple model: only one connection at a time
-                return;
-            }
+            if (currentPeerConnection) { logWarn(`Already connected to ${getShortPeerId(currentPeerConnection.peer)}. Rejecting incoming from ${getShortPeerId(conn.peer)}.`); conn.close(); return; }
             const connId = conn.peer; conn.metadata = conn.metadata || {}; conn.displayName = conn.metadata.name || null;
-            currentPeerConnection = conn; // Treat incoming as the main connection
-            connections[connId] = conn; // Keep track if needed, but primary is currentPeerConnection
+            currentPeerConnection = conn; // Store as the main connection
             logInfo(`Incoming Conn Accepted: ${getShortPeerId(connId)} (${conn.displayName || 'No Name'})`);
 
             conn.on('open', () => {
                  const remoteName = sanitizeHTML(conn.displayName || getShortPeerId(connId));
                  addSystemMessage(`${remoteName} connected to you.`);
-                 updateSelfStatusDisplay(); // Update host button states/status and enable send
-                 // Send initial info?
-                 sendEncoded(conn, { type: 'name-update', peerId: myPeerId, newName: myDisplayName });
+                 updateSelfStatusDisplay();
+                 sendEncoded(conn, { type: 'name-update', peerId: myPeerId, newName: myDisplayName }); // Send our name
                  processMessageQueue();
             });
             conn.on('data', data => { try { handleIncomingData(JSON.parse(textDecoder.decode(data)), connId, conn); } catch(e){ logError('Data Err (Inc):', e); }});
-            conn.on('close', () => { addSystemMessage(`${sanitizeHTML(conn.displayName||getShortPeerId(connId))} disconnected.`); logWarn(`Conn closed (Inc): ${getShortPeerId(connId)}`); delete connections[connId]; if(currentPeerConnection && currentPeerConnection.peer === connId) resetConnectionState(); updateSelfStatusDisplay(); }); // Reset if it was the main connection
-            conn.on('error', err => { logError(`ConnErr (Inc) ${getShortPeerId(connId)}:${err.type}`); delete connections[connId]; if(currentPeerConnection && currentPeerConnection.peer === connId) resetConnectionState(); updateSelfStatusDisplay(); });
+            conn.on('close', () => { addSystemMessage(`${sanitizeHTML(conn.displayName||getShortPeerId(connId))} disconnected.`); logWarn(`Conn closed (Inc): ${getShortPeerId(connId)}`); if(currentPeerConnection && currentPeerConnection.peer === connId) resetConnectionState(); updateSelfStatusDisplay(); });
+            conn.on('error', err => { logError(`ConnErr (Inc) ${getShortPeerId(connId)}:${err.type}`); if(currentPeerConnection && currentPeerConnection.peer === connId) resetConnectionState(); updateSelfStatusDisplay(); });
         }
 
-        function setupOutgoingConnObj(conn) { // When we initiate connection
+        function setupOutgoingConnObj(conn) {
              const connId = conn.peer; conn.metadata = conn.metadata || {}; conn.displayName = conn.metadata.name || null;
              currentPeerConnection = conn; // Store this as our main connection
              logInfo(`Outgoing Conn Init: ${getShortPeerId(connId)}`);
@@ -367,68 +364,69 @@
                  const remoteName = sanitizeHTML(conn.displayName || getShortPeerId(connId));
                  addSystemMessage(`✅ Connection to ${remoteName} established.`);
                  if(connectBtnEl) connectBtnEl.disabled = true; if(hostBtnEl) hostBtnEl.disabled = true;
-                 updateSelfStatusDisplay(); // Update status and enable send
-                 // Send our name info right away
-                 sendEncoded(conn, { type: 'name-update', peerId: myPeerId, newName: myDisplayName });
+                 if(hostIdInputEl) hostIdInputEl.disabled = true; // Disable input once connected
+                 updateSelfStatusDisplay();
+                 sendEncoded(conn, { type: 'name-update', peerId: myPeerId, newName: myDisplayName }); // Send our name
                  processMessageQueue();
              });
              conn.on('data', data => { try { const d=JSON.parse(textDecoder.decode(data));logInfo('Received Data:',d,'from',getShortPeerId(connId));handleIncomingData(d,connId,conn); } catch(e){ logError('Data Err (Out):', e); }});
              conn.on('close', () => { addSystemMessage(`Disconnected from ${sanitizeHTML(conn.displayName||getShortPeerId(connId))}.`); logWarn(`Conn closed (Out): ${getShortPeerId(connId)}`); resetConnectionState(); updateSelfStatusDisplay(); });
-             conn.on('error', err => { logError(`ConnErr (Out) ${getShortPeerId(connId)}:${err.type}`); resetConnectionState(); updateSelfStatusDisplay(); });
+             conn.on('error', err => { logError(`ConnErr (Out) ${getShortPeerId(connId)}:${err.type}`); addSystemMessage(`❌ Error connecting to ${getShortPeerId(connId)}: ${err.type}`); resetConnectionState(); updateSelfStatusDisplay(); });
         }
 
         function handleIncomingData(dObj, fromId, cInst){
             logInfo('Handling Data:', dObj, 'from', getShortPeerId(fromId));
-            let senderName = null; // Recalculate sender name based on current context
+            let senderName = null;
             if (currentPeerConnection && fromId === currentPeerConnection.peer) senderName = currentPeerConnection.displayName;
-            else if (connections[fromId]) senderName = connections[fromId].displayName;
-            senderName = senderName || dObj.sName || getShortPeerId(fromId); // Use received name as fallback
+            senderName = senderName || dObj.sName || getShortPeerId(fromId);
 
             switch(dObj.type){
                 case 'chat-message':
-                    addChatMessage(dObj.text, fromId, senderName); // Use calculated senderName
-                    // No relay needed in this simple 1-to-1 model
+                    addChatMessage(dObj.text, fromId, senderName);
                     break;
                 case 'name-update':
-                    const oldName = sanitizeHTML(senderName); // Use the name we *thought* they had
+                    const oldName = sanitizeHTML(senderName); // Use the name we calculated
                     logInfo(`Name update from ${getShortPeerId(fromId)}: "${dObj.newName}"`);
-                    if(currentPeerConnection && currentPeerConnection.peer === fromId) currentPeerConnection.displayName = dObj.newName;
-                    if(connections[fromId]) connections[fromId].displayName = dObj.newName; // Update host's map too
+                    if(currentPeerConnection && currentPeerConnection.peer === fromId) {
+                        currentPeerConnection.displayName = dObj.newName; // Update our record
+                        currentPeerConnection.metadata = { ...currentPeerConnection.metadata, name: dObj.newName }; // Update metadata too
+                    }
                     updateChatLogDisplayName(fromId, dObj.newName);
                     addSystemMessage(`${oldName} is now ${sanitizeHTML(dObj.newName || getShortPeerId(fromId))}.`);
                     break;
-                // No host-announce needed in this model
                 default: logWarn("Received unknown data type:", dObj.type);
             }
-            updateSelfStatusDisplay();
+            updateSelfStatusDisplay(); // Update status if name changes affect it
         }
 
-        function processMessageQueue(){ if(!peer||peer.destroyed||!peer.open){if(messageQueue.length>0)logInfo(`Peer not ready, ${messageQueue.length} msgs queued.`);return;} const tQ=[...messageQueue];messageQueue=[]; tQ.forEach(i=>{let snt=false;if(i.target==='peer'&¤tPeerConnection&¤tPeerConnection.open){sendToPeer(i.text,true);snt=true;} /* No broadcast target in this model */ if(!snt)messageQueue.push(i);}); if(messageQueue.length>0)logWarn(`${messageQueue.length} msgs re-queued.`);}
-        // Removed broadcastMessage - not applicable in 1-to-1 model
-        function sendToPeer(txt, fQ=false){ // Only need sendToPeer now
+        function processMessageQueue(){ if(!peer||peer.destroyed||!peer.open){if(messageQueue.length>0)logInfo(`Peer not ready, ${messageQueue.length} msgs queued.`);return;} const tQ=[...messageQueue];messageQueue=[]; tQ.forEach(i=>{let snt=false;if(i.target==='peer'&¤tPeerConnection&¤tPeerConnection.open){sendToPeer(i.text,true);snt=true;} if(!snt)messageQueue.push(i);}); if(messageQueue.length>0)logWarn(`${messageQueue.length} msgs re-queued.`);}
+
+        function sendToPeer(txt, fQ=false){
             logInfo('Attempting sendToPeer:', txt);
             if(!currentPeerConnection || !currentPeerConnection.open){ if(!fQ)messageQueue.push({text:txt,target:'peer'}); logWarn('Peer conn not ready, queue send'); addSystemMessage("Not connected. Message queued."); return;}
-            addChatMessage(txt, myPeerId, myDisplayName||getShortPeerId(myPeerId)); // Show own message
+            addChatMessage(txt, myPeerId, myDisplayName||getShortPeerId(myPeerId));
             sendEncoded(currentPeerConnection, {type:'chat-message', text:txt, sName:myDisplayName||getShortPeerId(myPeerId), peerId:myPeerId});
         }
+
         function propagateDisplayNameChange(){if(peer&&peer.open&&myPeerId&¤tPeerConnection&¤tPeerConnection.open){logInfo('Propagating name change:',myDisplayName); const nUpdMsg={type:'name-update',peerId:myPeerId,newName:myDisplayName}; sendEncoded(currentPeerConnection,nUpdMsg);}else{logWarn('Cannot propagate name, peer/conn not ready.');}}
+
         function resetConnectionState() {
              logWarn("Resetting connection state.");
              if (currentPeerConnection && !currentPeerConnection.destroyed) {
                  logInfo("Closing existing connection.");
-                 currentPeerConnection.close(); // Ensure cleanup
+                 currentPeerConnection.close();
              }
              currentPeerConnection = null;
-             connections = {}; // Clear any host connections if applicable
-             isReadyToHost = false; // No longer ready to host
+             connections = {}; // Clear host connections too
+             isReadyToHost = false;
              messageQueue = [];
-             // Buttons will be re-enabled by updateSelfStatusDisplay based on peer state
+             // Let updateSelfStatusDisplay handle button re-enabling
         }
 
         // --- EVENT LISTENERS ---
         function attachEventListeners(){
             logInfo("Attaching event listeners...");
-            const safeAttach=(el,ev,hnd)=>el?el.addEventListener(ev,hnd):logError(`Cannot attach ${ev}: Element not found for ${el?el.id:'(null)'}`);
+            const safeAttach=(el,ev,hnd)=>el?el.addEventListener(ev,hnd):logError(`Cannot attach ${ev}: Element not found for ${el?.id || '(unknown)'}`);
             safeAttach(themeToggleIconEl,'click',()=>applyTheme(currentTheme==='dark'?'light':'dark'));
             safeAttach(collapseIconEl,'click',toggleChatModule);
             safeAttach(fullFrameToggleIconEl,'click',toggleFullFrame);
@@ -446,7 +444,7 @@
                 if(!messageInputEl){logError("messageInputEl null"); return;}
                 const txt=messageInputEl.value.trim(); if(!txt){logInfo("No text");return;}
                 logInfo(`Attempt Send: text='${txt}', isHost=${isReadyToHost}, peer=${peer?.id}, open=${peer?.open}, currConn=${currentPeerConnection?.peer}, ccOpen=${currentPeerConnection?.open}`);
-                // Simple logic: if we have an open connection, send; otherwise, queue.
+                // Send if connection is open
                 if(currentPeerConnection && currentPeerConnection.open) sendToPeer(txt);
                 else { messageQueue.push({text:txt, target:'peer'}); addSystemMessage("Not connected. Queued."); logWarn("Msg queued: No open conn.", messageQueue);}
                 messageInputEl.value=''; messageInputEl.focus();
@@ -459,63 +457,49 @@
         }
 
         // --- HOST/CONNECT BUTTON HANDLERS ---
-         function handleHostButtonClick() {
+        function handleHostButtonClick() {
             logInfo('Ready to Host Btn Click');
-            if (!peer || !peer.open) {
-                 addSystemMessage("❌ PeerJS not connected yet. Please wait or try again.");
-                 initializePeer(); // Attempt init if needed
-                 return;
-            }
-            isReadyToHost = true; // Set the *intent*
+            if (!peer || !peer.open) { addSystemMessage("❌ PeerJS not online yet. Wait or Retry."); initializePeer(); return; }
+            isReadyToHost = true;
             resetConnectionState(); // Close any existing connection
-            addSystemMessage(`👂 Ready to host. Share Your ID below.`);
+            addSystemMessage(`👂 Ready to host. Share Your ID (in Setup section).`);
             logInfo(`Hosting mode enabled. PeerID: ${myPeerId}`);
-            updateSelfStatusDisplay(); // Update button states etc.
+            updateSelfStatusDisplay();
         }
-
         function handleConnectButtonClick() {
             logInfo('Connect Btn Click');
-            isReadyToHost = false; // Explicitly not hosting
-            if (!peer || !peer.open) {
-                 addSystemMessage("❌ PeerJS not connected yet. Please wait or try Connect again.");
-                 initializePeer(); // Attempt init if needed
-                 return;
-            }
+            isReadyToHost = false;
+            if (!peer || !peer.open) { addSystemMessage("❌ PeerJS not online yet. Wait or Retry Connect."); initializePeer(); return; }
             if(!hostIdInputEl) { logError("hostIdInputEl not found"); return; }
             let remoteId = hostIdInputEl.value.trim();
-            if (!remoteId) { addSystemMessage("❌ Please enter the Peer ID to connect to."); return; }
+            if (!remoteId) { addSystemMessage("❌ Please enter Peer ID to connect."); return; }
 
             addSystemMessage(`🔗 Connecting to ${getShortPeerId(remoteId)}...`);
             if(myPeerId && remoteId === myPeerId){ addSystemMessage("❌ Cannot connect to self."); return; }
 
-            // Disable buttons while attempting
-            if(hostBtnEl) hostBtnEl.disabled=true; if(connectBtnEl) connectBtnEl.disabled=true; if(hostIdInputEl) hostIdInputEl.disabled=true;
+            if(hostBtnEl) hostBtnEl.disabled=true; if(connectBtnEl) connectBtnEl.disabled=true; if(hostIdInputEl) hostIdInputEl.disabled=true; // Disable inputs during attempt
 
             const opts={reliable:true, serialization:'binary', metadata:{name:myDisplayName||getShortPeerId(myPeerId)}};
-
-            resetConnectionState(); // Close any existing connection first
-
+            resetConnectionState(); // Close any previous connection first
             logInfo(`Local peer ${myPeerId} attempting connect to ${remoteId}...`);
             const newConn = peer.connect(remoteId, opts);
-            if (newConn) {
-                 setupOutgoingConnObj(newConn); // Setup listeners for the new connection attempt
-            } else {
-                logError("peer.connect() failed immediately (returned null/undefined).");
-                addSystemMessage(`❌ Failed to initiate connection to ${getShortPeerId(remoteId)}.`);
-                 if(hostBtnEl) hostBtnEl.disabled=false; if(connectBtnEl) connectBtnEl.disabled=false; if(hostIdInputEl) hostIdInputEl.disabled=false; // Re-enable
-            }
+            if (newConn) { setupOutgoingConnObj(newConn); } // Setup listeners
+            else { logError("peer.connect() failed immediately."); addSystemMessage(`❌ Failed to initiate connection to ${getShortPeerId(remoteId)}.`); if(hostBtnEl)hostBtnEl.disabled=false; if(connectBtnEl)connectBtnEl.disabled=false; if(hostIdInputEl)hostIdInputEl.disabled=false; } // Re-enable if connect fails instantly
         }
 
         // --- INITIALIZATION ---
         function main(){
             logInfo("--- App Init Start ---");
-            myDisplayName=localStorage.getItem(LOCAL_STORAGE_KEYS.DISPLAY_NAME); if(displayNameInputEl)displayNameInputEl.value=myDisplayName||""; if(setDisplayNameBtnEl)setDisplayNameBtnEl.textContent=myDisplayName?"Update Name":"Set Name";
+            const essentialDOM = [chatModuleWrapper, chatModuleContainerEl, collapseIconEl, themeToggleIconEl, clearStorageIconEl, fullFrameToggleIconEl, statusEl, setupSectionEl, setupSectionTitleEl, peerIdDisplayAreaEl, myPeerIdValueEl, copyMyIdBtnEl, chatEl, messageInputAreaEl, messageInputEl, sendBtnEl, hostBtnEl, connectBtnEl, hostIdInputEl, displayNameInputEl, setDisplayNameBtnEl, clearStorageModalEl, confirmClearBtnEl, cancelClearBtnEl];
+            if (essentialDOM.some(el => !el)) { logError("CRITICAL UI elements missing in main(). Aborting."); if(statusEl) statusEl.innerHTML = "❌ Fatal Error: UI elements missing."; document.querySelectorAll('button, input').forEach(el => el.disabled = true); return; }
+
+            myDisplayName=localStorage.getItem(LOCAL_STORAGE_KEYS.DISPLAY_NAME); displayNameInputEl.value=myDisplayName||""; setDisplayNameBtnEl.textContent=myDisplayName?"Update":"Set Name";
             currentTheme=localStorage.getItem(LOCAL_STORAGE_KEYS.THEME)||'dark'; applyTheme(currentTheme);
-            if(collapseIconEl)collapseIconEl.innerHTML=isChatModuleCollapsed?'💬':'✖️'; if(isChatModuleCollapsed&&chatModuleContainerEl)chatModuleContainerEl.classList.add('collapsed');
-            if(fullFrameToggleIconEl)fullFrameToggleIconEl.innerHTML=isFullFrame?'↙️':'↗️'; if(isFullFrame&&chatModuleWrapper){chatModuleWrapper.classList.add('full-frame-mode');if(collapseIconEl)collapseIconEl.style.display='none';}
-            if(setupSectionEl&&setupSectionTitleEl){if(isSetupSectionCollapsed)setupSectionEl.classList.add('collapsed'); const ar=setupSectionTitleEl.querySelector('span');if(ar)ar.innerHTML=isSetupSectionCollapsed?'▶️':'🔽';}
-            if(hostIdInputEl)hostIdInputEl.placeholder=`Enter Peer ID to Connect`;
-            updateSelfStatusDisplay(); addSystemMessage(`👋 Welcome! Set name. PeerJS initializing...`);
+            if(isChatModuleCollapsed) chatModuleContainerEl.classList.add('collapsed'); collapseIconEl.innerHTML=isChatModuleCollapsed?'💬':'✖️';
+            if(isFullFrame){ chatModuleWrapper.classList.add('full-frame-mode'); fullFrameToggleIconEl.innerHTML='↙️'; if(collapseIconEl)collapseIconEl.style.display='none'; } else { fullFrameToggleIconEl.innerHTML='↗️'; }
+            if(localStorage.getItem(LOCAL_STORAGE_KEYS.IS_SETUP_COLLAPSED)==='true'){ setupSectionEl.classList.add('collapsed'); isSetupSectionCollapsed=true; } const ar=setupSectionTitleEl.querySelector('span'); if(ar)ar.innerHTML=isSetupSectionCollapsed?'▶️':'🔽';
+            hostIdInputEl.placeholder=`Enter Peer ID to Connect`;
+            updateSelfStatusDisplay(); addSystemMessage(`👋 Welcome! PeerJS initializing...`);
             initializePeer(); // Initialize PeerJS on load
             logInfo("--- App Init Complete ---");
         }
